@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: integration-hub-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: integration_hub
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - integration-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: integration-hub-redis
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - integration-network
+
+  integration-hub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: integration-hub
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: integration_hub
+      DB_SYNC: 'true'
+      DB_LOGGING: 'true'
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      OPERATOR_BASE_URL: http://mock-operator:3001
+      OPERATOR_API_KEY: operator-secret-key-123
+      RGS_WEBHOOK_URL: http://mock-rgs:3002/webhooks
+      HMAC_SECRET: your-super-secret-hmac-key-change-in-production-min-32-chars
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - integration-network
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+
+  mock-operator:
+    build:
+      context: ./mock-operator
+      dockerfile: Dockerfile
+    container_name: mock-operator
+    ports:
+      - '3001:3001'
+    environment:
+      PORT: 3001
+      RATE_LIMIT_RPM: 60
+    networks:
+      - integration-network
+
+  mock-rgs:
+    build:
+      context: ./mock-rgs
+      dockerfile: Dockerfile
+    container_name: mock-rgs
+    ports:
+      - '3002:3002'
+    environment:
+      PORT: 3002
+    networks:
+      - integration-network
+
+networks:
+  integration-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

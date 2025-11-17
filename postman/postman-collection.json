@@ -1,0 +1,626 @@
+{
+  "info": {
+    "name": "Integration Hub API",
+    "description": "Complete API collection for Integration Hub testing including debit, credit, webhooks, and mock services",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "operator_url",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "rgs_url",
+      "value": "http://localhost:3002",
+      "type": "string"
+    },
+    {
+      "key": "hmac_secret",
+      "value": "super-secret-hmac-key-change-in-production-min-32-chars",
+      "type": "string"
+    },
+    {
+      "key": "timestamp",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "signature",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Integration Hub - Wallet API",
+      "item": [
+        {
+          "name": "Debit - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Math.floor(Date.now() / 1000);",
+                  "pm.environment.set('timestamp', timestamp);",
+                  "const idempotencyKey = 'test-' + Date.now();",
+                  "pm.environment.set('idempotency_key', idempotencyKey);",
+                  "const payload = JSON.parse(pm.request.body.raw);",
+                  "const refId = 'ref-' + Date.now();",
+                  "payload.refId = refId;",
+                  "pm.request.body.update(JSON.stringify(payload));",
+                  "const payloadString = JSON.stringify(payload) + timestamp.toString();",
+                  "const secret = pm.environment.get('hmac_secret');",
+                  "// Use Web Crypto API for HMAC-SHA256",
+                  "const key = await crypto.subtle.importKey(",
+                  "    'raw',",
+                  "    new TextEncoder().encode(secret),",
+                  "    { name: 'HMAC', hash: 'SHA-256' },",
+                  "    false,",
+                  "    ['sign']",
+                  ");",
+                  "const signature_buffer = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadString));",
+                  "const signature = Array.from(new Uint8Array(signature_buffer))",
+                  "    .map(b => b.toString(16).padStart(2, '0'))",
+                  "    .join('');",
+                  "pm.environment.set('signature', signature);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{signature}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{timestamp}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"player-001\",\n  \"amountCents\": 1000,\n  \"currency\": \"USD\",\n  \"refId\": \"ref-placeholder\",\n  \"meta\": {\n    \"gameId\": \"game-123\",\n    \"roundId\": \"round-456\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/debit",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "debit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Credit - Success",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Math.floor(Date.now() / 1000);",
+                  "pm.environment.set('timestamp', timestamp);",
+                  "const idempotencyKey = 'test-' + Date.now();",
+                  "pm.environment.set('idempotency_key', idempotencyKey);",
+                  "const payload = JSON.parse(pm.request.body.raw);",
+                  "const refId = 'ref-' + Date.now();",
+                  "payload.refId = refId;",
+                  "pm.request.body.update(JSON.stringify(payload));",
+                  "const payloadString = JSON.stringify(payload) + timestamp.toString();",
+                  "const secret = pm.environment.get('hmac_secret');",
+                  "// Use Web Crypto API for HMAC-SHA256",
+                  "const key = await crypto.subtle.importKey(",
+                  "    'raw',",
+                  "    new TextEncoder().encode(secret),",
+                  "    { name: 'HMAC', hash: 'SHA-256' },",
+                  "    false,",
+                  "    ['sign']",
+                  ");",
+                  "const signature_buffer = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadString));",
+                  "const signature = Array.from(new Uint8Array(signature_buffer))",
+                  "    .map(b => b.toString(16).padStart(2, '0'))",
+                  "    .join('');",
+                  "pm.environment.set('signature', signature);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{signature}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{timestamp}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"player-001\",\n  \"amountCents\": 2000,\n  \"currency\": \"USD\",\n  \"refId\": \"ref-placeholder\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/credit",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "credit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Debit - Idempotent (Duplicate Key)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Use SAME idempotency key as first request",
+                  "// Set manually: pm.environment.set('idempotency_key', 'previous-key');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}",
+                "description": "Use same key from previous request"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{signature}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{timestamp}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"player-001\",\n  \"amountCents\": 1000,\n  \"currency\": \"USD\",\n  \"refId\": \"ref-idempotent-test\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/debit",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "debit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Debit - Invalid Currency (TRY)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Math.floor(Date.now() / 1000);",
+                  "pm.environment.set('timestamp', timestamp);",
+                  "const idempotencyKey = 'test-' + Date.now();",
+                  "pm.environment.set('idempotency_key', idempotencyKey);",
+                  "const payload = JSON.parse(pm.request.body.raw);",
+                  "const refId = 'ref-' + Date.now();",
+                  "payload.refId = refId;",
+                  "pm.request.body.update(JSON.stringify(payload));",
+                  "const payloadString = JSON.stringify(payload) + timestamp.toString();",
+                  "const secret = pm.environment.get('hmac_secret');",
+                  "// Use Web Crypto API for HMAC-SHA256",
+                  "const key = await crypto.subtle.importKey(",
+                  "    'raw',",
+                  "    new TextEncoder().encode(secret),",
+                  "    { name: 'HMAC', hash: 'SHA-256' },",
+                  "    false,",
+                  "    ['sign']",
+                  ");",
+                  "const signature_buffer = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadString));",
+                  "const signature = Array.from(new Uint8Array(signature_buffer))",
+                  "    .map(b => b.toString(16).padStart(2, '0'))",
+                  "    .join('');",
+                  "pm.environment.set('signature', signature);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{signature}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{timestamp}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"player-001\",\n  \"amountCents\": 1000,\n  \"currency\": \"TRY\",\n  \"refId\": \"ref-placeholder\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/debit",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "debit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Debit - Insufficient Funds",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Math.floor(Date.now() / 1000);",
+                  "pm.environment.set('timestamp', timestamp);",
+                  "const idempotencyKey = 'test-' + Date.now();",
+                  "pm.environment.set('idempotency_key', idempotencyKey);",
+                  "const payload = JSON.parse(pm.request.body.raw);",
+                  "const refId = 'ref-' + Date.now();",
+                  "payload.refId = refId;",
+                  "pm.request.body.update(JSON.stringify(payload));",
+                  "const payloadString = JSON.stringify(payload) + timestamp.toString();",
+                  "const secret = pm.environment.get('hmac_secret');",
+                  "// Use Web Crypto API for HMAC-SHA256",
+                  "const key = await crypto.subtle.importKey(",
+                  "    'raw',",
+                  "    new TextEncoder().encode(secret),",
+                  "    { name: 'HMAC', hash: 'SHA-256' },",
+                  "    false,",
+                  "    ['sign']",
+                  ");",
+                  "const signature_buffer = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadString));",
+                  "const signature = Array.from(new Uint8Array(signature_buffer))",
+                  "    .map(b => b.toString(16).padStart(2, '0'))",
+                  "    .join('');",
+                  "pm.environment.set('signature', signature);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{signature}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{timestamp}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"player-004\",\n  \"amountCents\": 100000,\n  \"currency\": \"USD\",\n  \"refId\": \"ref-placeholder\",\n  \"meta\": {\n    \"note\": \"Player-004 has low balance (100 cents)\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/debit",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "debit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Debit - Invalid Signature (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "test-invalid-signature"
+              },
+              {
+                "key": "X-Signature",
+                "value": "invalid-signature-12345"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{timestamp}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"player-001\",\n  \"amountCents\": 1000,\n  \"currency\": \"USD\",\n  \"refId\": \"ref-invalid-sig\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/debit",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "debit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Debit - Missing Idempotency Key (400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Math.floor(Date.now() / 1000);",
+                  "pm.environment.set('timestamp', timestamp);",
+                  "const payload = JSON.parse(pm.request.body.raw);",
+                  "const payloadString = JSON.stringify(payload) + timestamp.toString();",
+                  "const secret = pm.environment.get('hmac_secret');",
+                  "// Use Web Crypto API for HMAC-SHA256",
+                  "const key = await crypto.subtle.importKey(",
+                  "    'raw',",
+                  "    new TextEncoder().encode(secret),",
+                  "    { name: 'HMAC', hash: 'SHA-256' },",
+                  "    false,",
+                  "    ['sign']",
+                  ");",
+                  "const signature_buffer = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadString));",
+                  "const signature = Array.from(new Uint8Array(signature_buffer))",
+                  "    .map(b => b.toString(16).padStart(2, '0'))",
+                  "    .join('');",
+                  "pm.environment.set('signature', signature);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{signature}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{timestamp}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"player-001\",\n  \"amountCents\": 1000,\n  \"currency\": \"USD\",\n  \"refId\": \"ref-no-key\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/debit",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "debit"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Mock Operator API",
+      "item": [
+        {
+          "name": "Withdraw (Debit)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 10.00,\n  \"currency\": \"USD\",\n  \"transactionId\": \"test-withdraw-123\",\n  \"description\": \"Test withdrawal\"\n}"
+            },
+            "url": {
+              "raw": "{{operator_url}}/v2/players/player-001/withdraw",
+              "host": ["{{operator_url}}"],
+              "path": ["v2", "players", "player-001", "withdraw"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deposit (Credit)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 20.00,\n  \"currency\": \"USD\",\n  \"transactionId\": \"test-deposit-123\",\n  \"description\": \"Test deposit\"\n}"
+            },
+            "url": {
+              "raw": "{{operator_url}}/v2/players/player-001/deposit",
+              "host": ["{{operator_url}}"],
+              "path": ["v2", "players", "player-001", "deposit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transactions (Reconciliation)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{operator_url}}/v2/transactions?startDate=2024-01-01&endDate=2024-12-31&limit=100",
+              "host": ["{{operator_url}}"],
+              "path": ["v2", "transactions"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Simulate 500 Error",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"errorType\": \"500\",\n  \"count\": 2\n}"
+            },
+            "url": {
+              "raw": "{{operator_url}}/v2/players/simulate/error",
+              "host": ["{{operator_url}}"],
+              "path": ["v2", "simulate", "error"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Mock RGS API",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{rgs_url}}/health",
+              "host": ["{{rgs_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Received Webhooks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{rgs_url}}/webhooks?limit=10",
+              "host": ["{{rgs_url}}"],
+              "path": ["webhooks"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Simulate Webhook Error",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"count\": 3\n}"
+            },
+            "url": {
+              "raw": "{{rgs_url}}/simulate/error",
+              "host": ["{{rgs_url}}"],
+              "path": ["simulate", "error"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clear Webhook History",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{rgs_url}}/webhooks/clear",
+              "host": ["{{rgs_url}}"],
+              "path": ["webhooks", "clear"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

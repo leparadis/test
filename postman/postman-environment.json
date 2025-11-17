@@ -1,0 +1,49 @@
+{
+  "id": "integration-hub-env",
+  "name": "Integration Hub - Local",
+  "values": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "operator_url",
+      "value": "http://localhost:3001",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "rgs_url",
+      "value": "http://localhost:3002",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "hmac_secret",
+      "value": "super-secret-hmac-key-change-in-production-min-32-chars",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "timestamp",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "signature",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "idempotency_key",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}
