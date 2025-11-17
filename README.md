@@ -339,24 +339,6 @@ Check RGS is running and accepting webhooks.
 
 Operator rate limit: 60 RPM. Hub automatically retries with backoff.
 
-## Production Checklist
-
-- [ ] Change `HMAC_SECRET` (min 32 chars)
-- [ ] Set `DB_SYNC=false` (use migrations)
-- [ ] Configure proper database backups
-- [ ] Set up monitoring & alerts
-- [ ] Review and adjust retry/timeout values
-- [ ] Enable TLS/HTTPS
-- [ ] Set up log aggregation
-- [ ] Configure proper CORS settings
-- [ ] Review rate limits
-- [ ] Set up database connection pooling
-
-## Performance
-
-- **Throughput**: ~500 transactions/second (with proper scaling)
-- **Latency**: <100ms p95 (excluding operator call)
-- **Webhook Processing**: 100 webhooks/second via Bull queue
 - **Database**: Connection pooling (10 connections default)
 
 ## Tech Stack
